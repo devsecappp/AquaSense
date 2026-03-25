@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AquaSense</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --primary:#1e88a8;
+  --primary-light:#4fb3d3;
+  --bg:#f4f7f9;
+  --card:#ffffff;
+  --text:#1e2a32;
+  --sub:#6b7c85;
+  --border:#e3e8ec;
+  --danger:#e05a5a;
+  --warning:#f0a04b;
+  --safe:#3cb371;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  background:linear-gradient(180deg,#eef5f8,#f8fbfd);
+  font-family:'Jost',sans-serif;
+  color:var(--text);
+}
+
+.app{
+  min-height:100vh;
+  opacity:0;
+  transition:.6s;
+}
+.app.mounted{opacity:1}
+
+.content{
+  max-width:1100px;
+  margin:auto;
+  padding:20px;
+}
+
+/* HEADER */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:30px;
+}
+
+.brand{
+  font-size:32px;
+  font-weight:500;
+}
+.brand span{color:var(--primary)}
+
+.tagline{
+  font-size:13px;
+  color:var(--sub);
+}
+
+.header-meta{
+  font-size:12px;
+  color:var(--sub);
+  text-align:right;
+}
+
+/* TABS */
+.mode-tabs{
+  display:flex;
+  gap:10px;
+  margin-bottom:25px;
+}
+
+.tab-btn{
+  border:none;
+  padding:10px 20px;
+  border-radius:20px;
+  background:#e9f2f6;
+  cursor:pointer;
+  font-size:12px;
+}
+
+.tab-btn.active{
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  color:white;
+}
+
+/* CARDS */
+.param-card,
+.upload-area,
+.text-area,
+.result-panel{
+  background:var(--card);
+  border-radius:20px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.05);
+}
+
+/* PARAMS */
+.params-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:15px;
+}
+
+.param-card{
+  padding:20px;
+}
+
+.param-name{
+  font-size:12px;
+  color:var(--sub);
+}
+
+.param-value{
+  font-size:20px;
+  font-weight:500;
+}
+
+.param-value.safe-val{color:var(--safe)}
+.param-value.warn-val{color:var(--warning)}
+.param-value.danger-val{color:var(--danger)}
+
+.param-slider{
+  width:100%;
+  margin-top:10px;
+}
+
+/* UPLOAD */
+.upload-area{
+  padding:40px;
+  text-align:center;
+  cursor:pointer;
+  border:2px dashed var(--border);
+}
+
+.upload-title{
+  font-size:18px;
+  margin-bottom:5px;
+}
+
+.upload-sub{
+  font-size:12px;
+  color:var(--sub);
+}
+
+.upload-preview{
+  max-width:100%;
+  border-radius:15px;
+}
+
+/* TEXT */
+.text-area{
+  padding:15px;
+  border:none;
+}
+
+/* BUTTON */
+.analyze-btn{
+  background:linear-gradient(135deg,var(--primary),#0f5c73);
+  color:white;
+  border:none;
+  padding:14px 35px;
+  border-radius:30px;
+  cursor:pointer;
+  font-weight:500;
+}
+
+.analyze-btn:hover{
+  opacity:.9;
+}
+
+/* RESULT */
+.result-panel{
+  margin-top:30px;
+  overflow:hidden;
+}
+
+.result-header{
+  display:flex;
+  justify-content:space-between;
+  padding:25px;
+}
+
+.result-status{
+  font-size:24px;
+  font-weight:600;
+}
+
+.result-status.safe{color:var(--safe)}
+.result-status.contaminated{color:var(--danger)}
+
+.result-level{
+  background:#eef3f6;
+  padding:5px 12px;
+  border-radius:10px;
+  font-size:11px;
+  display:inline-block;
+  margin-bottom:10px;
+}
+
+/* CONTAMINANTS */
+.contaminants{
+  padding:20px;
+}
+
+.cont-item{
+  display:flex;
+  gap:10px;
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:10px;
+  background:#f7fafc;
+}
+
+.cont-name{
+  font-weight:500;
+}
+
+.cont-desc{
+  font-size:13px;
+  color:var(--sub);
+}
+
+.cont-val{
+  margin-left:auto;
+  font-weight:600;
+}
+
+/* RECOMMEND */
+.recommendation{
+  background:#f1f7fa;
+  padding:20px;
+}
+
+.rec-text{
+  font-size:14px;
+}
+
+/* MOBILE */
+@media(max-width:600px){
+  .result-header{
+    flex-direction:column;
+    gap:20px;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="grid-bg"></div>
+  <div class="content">
+    <header class="header">
+      <div class="logo-area">
+        <div class="logo-mark">
+          <div class="logo-icon">◈</div>
+          <div class="logo-line"></div>
+        </div>
+        <h1 class="brand">Aqua<span>Sense</span></h1>
+        <p class="tagline">Sistema de Análisis de Calidad del Agua</p>
+      </div>
+      <div class="header-meta">
+        <div>Arquitectura · Sostenibilidad</div>
+        <div>Monitoreo Hídrico Inteligente</div>
+        <div style="color:var(--gold);font-size:10px;margin-top:4px">v 1.0</div>
+      </div>
+    </header>
+
+    <div class="mode-tabs">
+      <button class="tab-btn active" onclick="setMode('manual')">Parámetros</button>
+      <button class="tab-btn" onclick="setMode('image')">Imagen</button>
+      <button class="tab-btn" onclick="setMode('text')">Descripción</button>
+    </div>
+
+    <!-- Panel Manual -->
+    <div id="panel-manual">
+      <div class="section-label">Ingreso de parámetros físico-químicos</div>
+      <div class="params-grid" id="params-grid"></div>
+    </div>
+
+    <!-- Panel Imagen -->
+    <div id="panel-image" style="display:none">
+      <div class="section-label">Análisis visual por fotografía</div>
+      <div class="upload-area" id="upload-area" onclick="triggerUpload()">
+        <div class="upload-corner tl"></div>
+        <div class="upload-corner tr"></div>
+        <div class="upload-corner bl"></div>
+        <div class="upload-corner br"></div>
+        <div id="upload-placeholder">
+          <span class="upload-icon">◈</span>
+          <div class="upload-title">Adjuntar fotografía del agua</div>
+          <div class="upload-sub">JPG · PNG · WEBP · Haz clic para seleccionar</div>
+        </div>
+        <img id="upload-preview" class="upload-preview" style="display:none"/>
+      </div>
+      <div id="remove-wrap" style="text-align:center;margin-top:-32px;margin-bottom:44px;display:none">
+        <button class="remove-btn" onclick="removeImage()">Remover imagen</button>
+      </div>
+      <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleImage(event)"/>
+    </div>
+
+    <!-- Panel Texto -->
+    <div id="panel-text" style="display:none">
+      <div class="section-label">Descripción cualitativa de la muestra</div>
+      <textarea class="text-area" id="description"
+        placeholder="Describa las características observadas: color, olor, textura, procedencia, contexto territorial, síntomas en usuarios..."></textarea>
+    </div>
+
+    <div class="analyze-wrap">
+      <button class="analyze-btn" id="analyze-btn" onclick="analyze()">Analizar muestra</button>
+      <span class="analyze-note" id="analyze-note">Análisis generado mediante inteligencia artificial · Gemini</span>
+    </div>
+
+    <div class="result-panel" id="result-panel">
+      <div class="result-accent" id="result-accent"></div>
+      <div class="result-header">
+        <div>
+          <div class="result-level" id="result-level"></div>
+          <div class="result-status" id="result-status"></div>
+          <div class="result-summary" id="result-summary"></div>
+        </div>
+        <div>
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="32" fill="none" stroke="var(--blush)" stroke-width="2"/>
+            <circle id="score-circle" cx="40" cy="40" r="32" fill="none" stroke="var(--sage)"
+              stroke-width="2" stroke-linecap="round" transform="rotate(-90 40 40)"
+              stroke-dasharray="201" stroke-dashoffset="201"/>
+            <text id="score-num" x="40" y="36" text-anchor="middle"
+              font-family="Cormorant Garamond, serif" font-size="22" font-weight="300" fill="var(--ink)">0</text>
+            <text x="40" y="50" text-anchor="middle"
+              font-family="Jost, sans-serif" font-size="8" fill="var(--ink-light)" letter-spacing="1">RIESGO</text>
+          </svg>
+        </div>
+      </div>
+      <div class="contaminants">
+        <div class="cont-title">Análisis por parámetro</div>
+        <div id="contaminants-list"></div>
+      </div>
+      <div class="recommendation">
+        <div class="rec-label">Recomendación</div>
+        <div class="rec-text" id="rec-text"></div>
+      </div>
+      <div class="disclaimer">Análisis orientativo. Para decisiones críticas de salud pública, confirmar con laboratorio certificado.</div>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+  </div>
+</div>
+
+<script>
+  // ── ⚠️ CONFIGURACIÓN — pon tu API Key de Groq en la línea de abajo ──
+  const GROQ_API_KEY = "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";
+  const GROQ_MODEL   = "meta-llama/llama-4-scout-17b-16e-instruct";
+  // ────────────────────────────────────────────────────────────────────
+
+  const PARAMS = [
+    { id:"ph",         label:"pH",         unit:"",          min:0,  max:14,  step:0.1,  safe:[6.5,8.5], note:"Acidez / Alcalinidad" },
+    { id:"turbidity",  label:"Turbidez",   unit:"NTU",       min:0,  max:100, step:0.5,  safe:[0,4],     note:"Claridad visual" },
+    { id:"chlorine",   label:"Cloro",      unit:"mg/L",      min:0,  max:5,   step:0.05, safe:[0.2,2],   note:"Desinfectante residual" },
+    { id:"lead",       label:"Plomo",      unit:"µg/L",      min:0,  max:100, step:0.5,  safe:[0,10],    note:"Metal pesado" },
+    { id:"mercury",    label:"Mercurio",   unit:"µg/L",      min:0,  max:10,  step:0.1,  safe:[0,1],     note:"Metal pesado" },
+    { id:"bacteria",   label:"E. coli",    unit:"UFC/100mL", min:0,  max:500, step:1,    safe:[0,0],     note:"Microbiológico" },
+    { id:"pesticides", label:"Pesticidas", unit:"µg/L",      min:0,  max:1,   step:0.01, safe:[0,0.1],   note:"Agroquímicos" },
+    { id:"nitrates",   label:"Nitratos",   unit:"mg/L",      min:0,  max:100, step:0.5,  safe:[0,50],    note:"Nutrientes" },
+  ];
+
+  let currentMode = "manual", imageFile = null, imageBase64 = null;
+
+  // Construir sliders
+  const grid = document.getElementById("params-grid");
+  PARAMS.forEach(p => {
+    const initVal = p.safe[1] === 0 ? 0 : (p.safe[0] + p.safe[1]) / 2;
+    const card = document.createElement("div");
+    card.className = "param-card";
+    card.innerHTML = `
+      <div class="param-header">
+        <span class="param-name">${p.label}</span>
+        <span class="param-value" id="val-${p.id}">${initVal}<span class="param-unit">${p.unit}</span></span>
+      </div>
+      <div class="param-note">${p.note}</div>
+      <input type="range" class="param-slider" id="slider-${p.id}"
+        min="${p.min}" max="${p.max}" step="${p.step}" value="${initVal}"
+        oninput="updateSlider('${p.id}', ${p.safe[0]}, ${p.safe[1]}, this.value)"/>
+      <div class="param-range">
+        <span>${p.min}</span>
+        <span class="param-safe-range">✦ rango seguro: ${p.safe[0]}–${p.safe[1]}</span>
+        <span>${p.max}</span>
+      </div>`;
+    grid.appendChild(card);
+    updateSlider(p.id, p.safe[0], p.safe[1], initVal);
+  });
+
+  function updateSlider(id, safeMin, safeMax, val) {
+    val = parseFloat(val);
+    const el = document.getElementById("val-" + id);
+    const p  = PARAMS.find(x => x.id === id);
+    const cls = (val >= safeMin && val <= safeMax) ? "safe-val"
+      : ((val - safeMax) / (p.max - safeMax) > 0.4) ? "danger-val" : "warn-val";
+    el.className = "param-value " + cls;
+    el.innerHTML = `${val}<span class="param-unit">${p.unit}</span>`;
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll(".tab-btn").forEach((b, i) => {
+      b.classList.toggle("active", ["manual","image","text"][i] === mode);
+    });
+    document.getElementById("panel-manual").style.display = mode === "manual" ? "" : "none";
+    document.getElementById("panel-image").style.display  = mode === "image"  ? "" : "none";
+    document.getElementById("panel-text").style.display   = mode === "text"   ? "" : "none";
+    document.getElementById("result-panel").style.display = "none";
+    document.getElementById("error-box").style.display    = "none";
+  }
+
+  function triggerUpload() {
+    if (!imageFile) document.getElementById("file-input").click();
+  }
+
+  function handleImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    imageFile = file;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      imageBase64 = ev.target.result.split(",")[1];
+      document.getElementById("upload-placeholder").style.display = "none";
+      const img = document.getElementById("upload-preview");
+      img.src = ev.target.result;
+      img.style.display = "block";
+      document.getElementById("remove-wrap").style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImage() {
+    imageFile = null; imageBase64 = null;
+    document.getElementById("upload-preview").style.display = "none";
+    document.getElementById("upload-placeholder").style.display = "";
+    document.getElementById("remove-wrap").style.display = "none";
+    document.getElementById("file-input").value = "";
+  }
+
+  async function analyze() {
+    const btn  = document.getElementById("analyze-btn");
+    const note = document.getElementById("analyze-note");
+    btn.disabled = true;
+    btn.innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+    note.textContent = "Procesando análisis con IA...";
+    document.getElementById("result-panel").style.display = "none";
+    document.getElementById("error-box").style.display    = "none";
+
+    let messages;
+
+    if (currentMode === "manual") {
+      const str = PARAMS.map(p => {
+        const val = document.getElementById("slider-" + p.id).value;
+        return `${p.label}: ${val} ${p.unit} (seguro: ${p.safe[0]}–${p.safe[1]})`;
+      }).join("\n");
+      messages = [{
+        role: "user",
+        content: `Analiza estos parámetros de agua:\n\n${str}\n\nResponde SOLO en JSON sin texto adicional:\n{"contaminado":true/false,"nivel":"seguro|leve|moderado|severo","puntaje":0-100,"contaminantes":[{"nombre":"...","valor":"...","estado":"ok|alerta|peligro","descripcion":"..."}],"recomendacion":"...","resumen":"..."}`
+      }];
+
+    } else if (currentMode === "text") {
+      const desc = document.getElementById("description").value;
+      messages = [{
+        role: "user",
+        content: `Descripción del agua: "${desc}"\n\nAnaliza el riesgo. Responde SOLO en JSON sin texto adicional:\n{"contaminado":true/false,"nivel":"seguro|leve|moderado|severo","puntaje":0-100,"contaminantes":[{"nombre":"...","valor":"inferido","estado":"ok|alerta|peligro","descripcion":"..."}],"recomendacion":"...","resumen":"..."}`
+      }];
+
+    } else {
+      // Modo imagen — Groq usa image_url con base64
+      messages = [{
+        role: "user",
+        content: [
+          {
+            type: "image_url",
+            image_url: { url: `data:${imageFile.type};base64,${imageBase64}` }
+          },
+          {
+            type: "text",
+            text: `Analiza esta imagen de agua visualmente. Responde SOLO en JSON sin texto adicional:\n{"contaminado":true/false,"nivel":"seguro|leve|moderado|severo","puntaje":0-100,"contaminantes":[{"nombre":"...","valor":"visual","estado":"ok|alerta|peligro","descripcion":"..."}],"recomendacion":"...","resumen":"..."}`
+          }
+        ]
+      }];
+    }
+
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          max_tokens: 1000,
+          temperature: 0.2,
+          messages
+        })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+
+      const text   = data.choices?.[0]?.message?.content || "";
+      const result = JSON.parse(text.replace(/```json|```/g, "").trim());
+      showResult(result);
+
+    } catch(e) {
+      const eb = document.getElementById("error-box");
+      eb.textContent = "No se pudo completar el análisis: " + (e.message || "verifica tu API Key y conexión.");
+      eb.style.display = "block";
+    }
+
+    btn.disabled = false;
+    btn.textContent = "Analizar muestra";
+    note.textContent = "Análisis generado mediante inteligencia artificial · Groq";
+  }
+
+  function showResult(r) {
+    const circum    = 2 * Math.PI * 32;
+    const nivel     = r.nivel || "leve";
+    const accentMap = { seguro:"safe", leve:"leve", moderado:"moderado", severo:"severo" };
+    const scoreColor = r.puntaje > 60 ? "var(--danger)" : r.puntaje > 30 ? "var(--warning)" : "var(--sage)";
+
+    document.getElementById("result-accent").className = "result-accent " + (accentMap[nivel] || "leve");
+    document.getElementById("result-level").className  = "result-level " + nivel;
+    document.getElementById("result-level").textContent = nivel;
+
+    const statusEl = document.getElementById("result-status");
+    statusEl.className   = "result-status " + (r.contaminado ? "contaminated" : "safe");
+    statusEl.textContent = r.contaminado ? "Agua Contaminada" : "Agua en Condiciones Seguras";
+
+    document.getElementById("result-summary").textContent = r.resumen;
+    document.getElementById("score-num").textContent = r.puntaje;
+
+    const circle = document.getElementById("score-circle");
+    circle.setAttribute("stroke", scoreColor);
+    circle.setAttribute("stroke-dashoffset", circum * (1 - r.puntaje / 100));
+
+    const list = document.getElementById("contaminants-list");
+    list.innerHTML = (r.contaminantes || []).map(c => `
+      <div class="cont-item">
+        <div class="cont-indicator ${c.estado}"></div>
+        <div style="flex:1">
+          <div class="cont-name">${c.nombre}</div>
+          <div class="cont-desc">${c.descripcion}</div>
+        </div>
+        <div class="cont-val ${c.estado}">${c.valor}</div>
+      </div>`).join("");
+
+    document.getElementById("rec-text").textContent = r.recomendacion;
+    document.getElementById("result-panel").style.display = "block";
+  }
+
+  setTimeout(() => document.getElementById("app").classList.add("mounted"), 80);
+</script>
+</body>
+</html>
